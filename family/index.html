@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFF7EC">
+<title>家庭积分成长系统</title>
+<style>
+/* ============ 基础 ============ */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  color:#5D4037;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255,201,77,.22), transparent 42%),
+    radial-gradient(circle at 88% 10%, rgba(255,143,175,.16), transparent 45%),
+    radial-gradient(circle at 50% 98%, rgba(110,198,255,.14), transparent 50%),
+    linear-gradient(180deg,#FFF7EC 0%,#FFF1E0 100%);
+  background-attachment:fixed;
+}
+button { font-family:inherit; cursor:pointer; }
+input,textarea { font-family:inherit; }
+#app { max-width:520px; margin:0 auto; }
+
+/* ============ 顶部 ============ */
+.app-header {
+  position:sticky; top:0; z-index:50;
+  padding:12px 14px 10px;
+  background:linear-gradient(180deg,rgba(255,247,236,.97),rgba(255,247,236,.88));
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(240,102,47,.06);
+}
+.app-title { font-size:15px; font-weight:800; letter-spacing:.5px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.child-switch { display:flex; gap:10px; }
+.child-card {
+  flex:1; display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.55); border:2px solid transparent;
+  border-radius:18px; padding:9px 10px; cursor:pointer;
+  transition:.25s; min-width:0;
+}
+.child-card.active { background:#fff; border-color:#FF8A5E; box-shadow:0 6px 16px rgba(240,102,47,.14); transform:translateY(-1px); }
+.avatar {
+  width:44px; height:44px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:24px;
+  background:linear-gradient(135deg,#FFE3C4,#FFD1A6);
+}
+.child-card.active .avatar { background:linear-gradient(135deg,#FFCFA8,#FFAB72); }
+.cc-info { min-width:0; flex:1; }
+.cc-name { font-size:15px; font-weight:800; display:flex; align-items:baseline; gap:5px; }
+.cc-age { font-size:11px; color:#B09B8F; font-weight:600; }
+.cc-points { font-size:12px; color:#F0662F; font-weight:800; margin-top:2px; }
+.cc-streak { font-size:10px; color:#B09B8F; font-weight:600; margin-top:1px; }
+
+/* ============ 主体与页面 ============ */
+main { padding:12px 14px 108px; }
+.page { display:none; }
+.page.active { display:block; animation:pageIn .3s ease; }
+@keyframes pageIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+.card { background:#fff; border-radius:22px; padding:16px; box-shadow:0 6px 18px rgba(240,102,47,.09); margin-bottom:14px; }
+.section-head { display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:800; margin-bottom:12px; }
+.section-link { font-size:12px; color:#F0662F; font-weight:700; }
+
+/* ============ 首页英雄卡 ============ */
+.hero-card {
+  position:relative; overflow:hidden; color:#fff;
+  background:linear-gradient(135deg,#FFA76B 0%,#FF7E4D 60%,#F7632C 100%);
+  border-radius:26px; padding:18px 18px 16px; margin-bottom:14px;
+  box-shadow:0 10px 26px rgba(247,99,44,.28);
+}
+.hero-card::before { content:''; position:absolute; width:170px; height:170px; border-radius:50%; background:rgba(255,255,255,.13); top:-70px; right:-45px; }
+.hero-card::after { content:''; position:absolute; width:90px; height:90px; border-radius:50%; background:rgba(255,255,255,.10); bottom:-38px; left:-22px; }
+.hero-head { display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1; }
+.hero-hello { font-size:14px; font-weight:700; opacity:.95; }
+.hero-lv { background:rgba(255,255,255,.24); border-radius:999px; padding:5px 12px; font-size:12px; font-weight:800; }
+.hero-points-wrap { text-align:center; padding:14px 0 12px; position:relative; z-index:1; }
+.hero-big { font-size:46px; font-weight:800; line-height:1.1; text-shadow:0 3px 10px rgba(180,70,20,.25); }
+.hero-big-label { font-size:12px; opacity:.9; font-weight:600; margin-top:2px; }
+.hero-stats { display:flex; position:relative; z-index:1; background:rgba(255,255,255,.16); border-radius:16px; padding:10px 0; }
+.hero-stat { flex:1; text-align:center; display:flex; flex-direction:column; gap:2px; }
+.hero-stat + .hero-stat { border-left:1px solid rgba(255,255,255,.28); }
+.hs-v { font-size:16px; font-weight:800; }
+.hs-l { font-size:10px; opacity:.9; font-weight:600; }
+
+/* ============ 统计三格 ============ */
+.stat-row { display:flex; gap:10px; margin-bottom:14px; }
+.stat-mini { flex:1; background:#fff; border-radius:18px; padding:12px 6px; text-align:center; box-shadow:0 6px 18px rgba(240,102,47,.09); }
+.stat-mini .v { font-size:19px; font-weight:800; color:#F0662F; }
+.stat-mini .l { font-size:11px; color:#B09B8F; margin-top:3px; font-weight:600; }
+
+/* ============ 下一奖励 ============ */
+.nr-head { font-size:14px; font-weight:800; color:#B85C2E; margin-bottom:10px; display:flex; align-items:center; gap:5px; }
+.nr-body { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.nr-name { font-size:16px; font-weight:800; }
+.nr-diff { font-size:12px; color:#B09B8F; margin-top:3px; font-weight:600; }
+.nr-diff b { color:#F0662F; font-size:14px; }
+.nr-pct { font-size:12px; font-weight:800; color:#F0662F; flex-shrink:0; }
+
+/* ============ 进度条 ============ */
+.progress-track { height:12px; background:#FFEADD; border-radius:999px; overflow:hidden; }
+.progress-fill { height:100%; width:0; background:linear-gradient(90deg,#FFC94D,#FF7E4D); border-radius:999px; transition:width .8s cubic-bezier(.2,.8,.3,1); }
+
+/* ============ 任务条目 ============ */
+.task-item {
+  display:flex; align-items:center; gap:10px;
+  background:#fff; border-radius:18px; padding:13px 14px;
+  box-shadow:0 6px 18px rgba(240,102,47,.09); margin-bottom:10px; transition:.3s;
+}
+.task-item.done { background:#F0FBF4; border:1.5px solid #BEE8CC; box-shadow:none; }
+.task-item.completing { animation:completeFlash .5s ease; }
+@keyframes completeFlash {
+  0% { transform:scale(1); }
+  35% { transform:scale(1.03); background:#D9F5E3; }
+  100% { transform:scale(1); background:#F0FBF4; }
+}
+.task-info { flex:1; min-width:0; }
+.task-name { font-size:15px; font-weight:700; }
+.task-item.done .task-name { color:#7FA88D; }
+.task-meta { display:flex; align-items:center; gap:8px; margin-top:5px; flex-wrap:wrap; }
+.cat-tag { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; }
+.task-points { font-size:13px; font-weight:800; color:#F0A02F; }
+.task-points.earned { color:#4CAF76; }
+.btn-done {
+  background:linear-gradient(135deg,#FFA26B,#FF7E4D); color:#fff; border:none;
+  border-radius:999px; padding:11px 20px; font-size:14px; font-weight:800;
+  box-shadow:0 4px 12px rgba(240,102,47,.3); white-space:nowrap; transition:transform .15s;
+}
+.btn-done:active { transform:scale(.93); }
+.done-box { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+.done-time { font-size:11px; color:#4CAF76; font-weight:800; white-space:nowrap; }
+.btn-undo { background:#FFEDE9; color:#E05B4B; border:none; border-radius:999px; padding:6px 13px; font-size:12px; font-weight:700; }
+.btn-undo:active { transform:scale(.93); }
+
+/* ============ 分类分组 ============ */
+.cat-group { margin-bottom:14px; }
+.cat-head { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:800; margin:0 4px 10px; color:#8D6E63; }
+.cat-head .cat-dot { width:8px; height:8px; border-radius:50%; }
+
+/* ============ 日期横幅 ============ */
+.date-banner {
+  background:linear-gradient(135deg,#FFE8CF,#FFD9BC); border-radius:18px;
+  padding:13px 16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px;
+}
+.db-date { font-size:15px; font-weight:800; color:#B85C2E; }
+.db-prog { font-size:12px; font-weight:700; color:#C97A4A; background:rgba(255,255,255,.55); padding:6px 12px; border-radius:999px; white-space:nowrap; }
+.all-done-banner {
+  background:linear-gradient(135deg,#D9F5E3,#C2EED2); border-radius:18px; padding:14px;
+  text-align:center; font-weight:800; color:#3D8A5F; font-size:15px; margin-bottom:14px;
+}
+
+/* ============ 奖励 ============ */
+.points-banner {
+  background:linear-gradient(135deg,#FFD982,#FFB84D); border-radius:22px; padding:16px;
+  text-align:center; color:#8A5A12; margin-bottom:14px;
+  box-shadow:0 8px 20px rgba(255,184,77,.25); position:relative; overflow:hidden;
+}
+.points-banner::after { content:''; position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.22); top:-50px; right:-30px; }
+.pb-label { font-size:12px; font-weight:700; opacity:.85; }
+.pb-num { font-size:36px; font-weight:800; text-shadow:0 2px 8px rgba(138,90,18,.15); position:relative; z-index:1; }
+.reward-item {
+  display:flex; align-items:center; gap:12px;
+  background:#fff; border-radius:18px; padding:13px 14px;
+  box-shadow:0 6px 18px rgba(240,102,47,.09); margin-bottom:10px;
+}
+.reward-icon { width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.reward-info { flex:1; min-width:0; }
+.reward-name { font-size:15px; font-weight:700; }
+.reward-meta { display:flex; align-items:center; gap:8px; margin-top:5px; }
+.reward-points { font-size:13px; font-weight:800; color:#F0A02F; }
+.not-enough { background:#F4EDE7; color:#B09B8F; border-radius:999px; padding:10px 14px; font-size:12px; font-weight:800; white-space:nowrap; flex-shrink:0; }
+.btn-redeem {
+  background:linear-gradient(135deg,#7ED99A,#4CAF76); color:#fff; border:none;
+  border-radius:999px; padding:11px 18px; font-size:14px; font-weight:800;
+  box-shadow:0 4px 12px rgba(76,175,118,.3); white-space:nowrap; transition:transform .15s; flex-shrink:0;
+}
+.btn-redeem:active { transform:scale(.93); }
+
+/* ============ 图表 ============ */
+.chart { display:flex; align-items:flex-end; gap:6px; height:132px; padding:6px 2px 0; }
+.chart-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+.chart-val { font-size:10px; color:#F0662F; font-weight:800; margin-bottom:3px; min-height:12px; }
+.chart-bar { width:62%; max-width:26px; min-height:5px; border-radius:7px 7px 3px 3px; background:linear-gradient(180deg,#FFD9BC,#FFC2A0); transform-origin:bottom; animation:barGrow .6s cubic-bezier(.2,.8,.3,1) both; }
+.chart-col.today .chart-bar { background:linear-gradient(180deg,#FFB35C,#FF7E4D); box-shadow:0 3px 10px rgba(247,99,44,.3); }
+.chart-label { font-size:10px; color:#B09B8F; margin-top:6px; font-weight:600; }
+.chart-col.today .chart-label { color:#F0662F; font-weight:800; }
+@keyframes barGrow { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+.chart-total { font-size:12px; color:#F0662F; font-weight:800; }
+
+/* ============ 成长页 ============ */
+.level-card {
+  display:flex; align-items:center; gap:14px; color:#fff;
+  background:linear-gradient(135deg,#B98CE0,#8E5FC2); border-radius:24px; padding:18px;
+  margin-bottom:14px; box-shadow:0 10px 24px rgba(142,95,194,.28);
+  position:relative; overflow:hidden;
+}
+.level-card::after { content:''; position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.1); top:-45px; right:-35px; }
+.level-icon { width:62px; height:62px; border-radius:20px; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; font-size:34px; flex-shrink:0; }
+.level-info { flex:1; min-width:0; position:relative; z-index:1; }
+.level-name { font-size:17px; font-weight:800; }
+.level-sub { font-size:11px; opacity:.92; font-weight:600; margin:5px 0 8px; }
+.level-card .progress-track { background:rgba(255,255,255,.25); height:10px; }
+.level-card .progress-fill { background:linear-gradient(90deg,#FFE9A0,#FFC94D); }
+
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+.stat-cell { background:#fff; border-radius:18px; padding:13px 6px; text-align:center; box-shadow:0 6px 18px rgba(240,102,47,.09); }
+.stat-cell .v { font-size:19px; font-weight:800; color:#F0662F; }
+.stat-cell .l { font-size:11px; color:#B09B8F; margin-top:3px; font-weight:600; }
+
+.badge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.badge { background:#fff; border-radius:18px; padding:14px 8px 12px; text-align:center; box-shadow:0 6px 18px rgba(240,102,47,.09); }
+.badge .b-icon { width:52px; height:52px; margin:0 auto 8px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; background:linear-gradient(135deg,#FFF3D6,#FFE0AC); }
+.badge.unlocked .b-icon { box-shadow:0 0 0 3px #FFD166 inset, 0 4px 10px rgba(255,209,102,.4); }
+.badge.locked { opacity:.5; }
+.badge.locked .b-icon { background:#F0EBE6; filter:grayscale(1); }
+.badge .b-name { font-size:12px; font-weight:800; }
+.badge .b-desc { font-size:10px; color:#B09B8F; margin-top:3px; line-height:1.35; font-weight:600; }
+
+.record-tabs { display:flex; background:#FFEADD; border-radius:999px; padding:4px; margin-bottom:14px; }
+.rtab { flex:1; text-align:center; padding:9px 0; border-radius:999px; font-size:13px; font-weight:800; color:#B09B8F; transition:.25s; }
+.rtab.on { background:#fff; color:#F0662F; box-shadow:0 2px 8px rgba(240,102,47,.15); }
+.record-date { font-size:12px; color:#B09B8F; font-weight:800; margin:14px 4px 8px; display:flex; align-items:center; gap:6px; }
+.record-date::after { content:''; flex:1; height:1px; background:#F0E3D8; }
+.record-item { display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px; padding:11px 13px; margin-bottom:8px; box-shadow:0 4px 12px rgba(240,102,47,.07); }
+.ri-icon { width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.ri-info { flex:1; min-width:0; }
+.ri-name { font-size:13px; font-weight:700; }
+.ri-time { font-size:10px; color:#B09B8F; margin-top:2px; font-weight:600; }
+.ri-pts { font-size:14px; font-weight:800; flex-shrink:0; }
+.ri-pts.plus { color:#4CAF76; }
+.ri-pts.minus { color:#E05B4B; }
+
+/* ============ 设置页 ============ */
+.settings-title { font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+.manage-child { font-size:11px; background:#FFF0E5; color:#F0662F; padding:4px 10px; border-radius:999px; font-weight:700; }
+.manage-tip { font-size:11px; color:#B09B8F; background:#FFF8F0; border-radius:12px; padding:9px 12px; margin-bottom:12px; line-height:1.5; font-weight:600; }
+.member-item { display:flex; align-items:center; gap:11px; padding:10px 0; border-bottom:1px dashed #F5E8DC; }
+.member-item:last-child { border-bottom:none; }
+.member-avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#FFE3C4,#FFD1A6); display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; }
+.member-info { flex:1; min-width:0; }
+.member-name { font-size:15px; font-weight:800; }
+.member-age { font-size:11px; color:#B09B8F; font-weight:600; }
+.member-meta { font-size:11px; color:#B09B8F; font-weight:600; margin-top:2px; }
+.manage-item { display:flex; align-items:center; gap:9px; padding:10px 0; border-bottom:1px dashed #F5E8DC; }
+.manage-item:last-child { border-bottom:none; }
+.manage-item.off .mi-info { opacity:.45; }
+.mi-info { flex:1; min-width:0; }
+.mi-name { font-size:14px; font-weight:700; }
+.mi-meta { display:flex; align-items:center; gap:7px; margin-top:4px; flex-wrap:wrap; }
+.mi-pts { font-size:12px; font-weight:800; color:#F0A02F; }
+.mi-off { font-size:10px; color:#E05B4B; font-weight:700; background:#FFEBE7; padding:2px 7px; border-radius:999px; }
+.icon-btn { width:38px; height:38px; border-radius:13px; border:none; background:#FFF3E9; font-size:16px; flex-shrink:0; transition:transform .15s; }
+.icon-btn:active { transform:scale(.9); }
+.icon-btn.del { background:#FFEBE7; }
+.empty-mini { text-align:center; color:#B09B8F; font-size:13px; padding:16px; font-weight:600; }
+.data-btns { display:flex; gap:10px; }
+.data-btns .btn { flex:1; }
+.version-tip { text-align:center; font-size:11px; color:#C9B8B0; padding:8px 0 16px; font-weight:600; }
+
+/* ============ 底部导航 ============ */
+.bottom-nav {
+  position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  width:calc(100% - 24px); max-width:492px; z-index:60;
+  background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  border-radius:24px; box-shadow:0 8px 26px rgba(240,102,47,.16);
+  display:flex; padding:7px; padding-bottom:calc(7px + env(safe-area-inset-bottom) * .3);
+}
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0 5px; border-radius:18px; transition:.25s; }
+.nav-item.active { background:linear-gradient(135deg,#FFA26B,#FF7E4D); box-shadow:0 4px 12px rgba(240,102,47,.3); }
+.nav-icon { font-size:20px; line-height:1; }
+.nav-text { font-size:11px; font-weight:700; color:#B09B8F; }
+.nav-item.active .nav-text { color:#fff; }
+
+/* ============ 弹窗 ============ */
+.modal-mask { position:fixed; inset:0; background:rgba(93,64,55,.45); z-index:100; display:none; align-items:flex-end; justify-content:center; }
+.modal-mask.show { display:flex; animation:fadeIn .2s; }
+.modal-mask.center { align-items:center; padding:26px; }
+.modal-mask.center .modal-panel { border-radius:24px; max-width:360px; width:100%; animation:popIn .25s cubic-bezier(.2,.8,.3,1.2); padding:24px 20px; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes popIn { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
+.modal-panel {
+  background:#FFFDF9; width:100%; max-width:520px;
+  border-radius:26px 26px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  max-height:84vh; overflow-y:auto; animation:sheetUp .3s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes sheetUp { from { transform:translateY(60px); opacity:0; } to { transform:none; opacity:1; } }
+.modal-title { font-size:17px; font-weight:800; margin-bottom:16px; text-align:center; }
+.modal-center-icon { font-size:44px; text-align:center; margin-bottom:8px; }
+.modal-center-title { font-size:17px; font-weight:800; text-align:center; margin-bottom:8px; }
+.modal-center-text { font-size:13px; color:#B09B8F; text-align:center; line-height:1.6; font-weight:600; }
+.form-btns { display:flex; gap:10px; margin-top:18px; }
+.form-btns .btn { flex:1; }
+.form-item { margin-bottom:14px; }
+.form-label { font-size:13px; color:#A1887F; margin-bottom:7px; font-weight:800; }
+.form-input {
+  width:100%; border:2px solid #F3E5D8; background:#FFF9F3; border-radius:14px;
+  padding:12px 14px; font-size:15px; color:#5D4037; outline:none; font-weight:600;
+}
+.form-input:focus { border-color:#FF8A5E; }
+.form-row { display:flex; justify-content:space-between; align-items:center; }
+textarea.form-input { height:110px; resize:none; line-height:1.5; font-size:12px; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { padding:8px 15px; border-radius:999px; background:#FFF3E9; color:#B09B8F; font-size:13px; font-weight:700; border:2px solid transparent; transition:.2s; }
+.chip.on { background:linear-gradient(135deg,#FFA26B,#FF7E4D); color:#fff; }
+.form-tip { font-size:11px; color:#C9B8B0; margin-top:6px; font-weight:600; line-height:1.5; }
+
+/* ============ 开关 ============ */
+.switch { position:relative; width:48px; height:28px; display:inline-block; flex-shrink:0; cursor:pointer; }
+.switch input { opacity:0; width:0; height:0; }
+.switch .slider { position:absolute; inset:0; background:#E8DCD3; border-radius:999px; transition:.25s; }
+.switch .slider::before { content:''; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.25s; box-shadow:0 2px 6px rgba(0,0,0,.18); }
+.switch input:checked + .slider { background:#4CAF76; }
+.switch input:checked + .slider::before { transform:translateX(20px); }
+
+/* ============ 按钮 ============ */
+.btn { border:none; border-radius:999px; padding:12px 20px; font-size:15px; font-weight:800; transition:transform .15s; }
+.btn:active { transform:scale(.94); }
+.btn-primary { background:linear-gradient(135deg,#FFA26B,#FF7E4D); color:#fff; box-shadow:0 4px 14px rgba(240,102,47,.3); }
+.btn-ghost { background:#FFF0E5; color:#F0662F; }
+.btn-danger { background:#FFE9E5; color:#E05B4B; }
+.btn-green { background:linear-gradient(135deg,#7ED99A,#4CAF76); color:#fff; box-shadow:0 4px 14px rgba(76,175,118,.3); }
+.btn-block { width:100%; padding:15px; }
+
+/* ============ 飘字与提示 ============ */
+.float-score {
+  position:fixed; z-index:300; font-size:26px; font-weight:800; color:#F0662F;
+  pointer-events:none; transform:translate(-50%,-50%);
+  text-shadow:0 2px 10px rgba(255,255,255,.9), 0 0 6px rgba(255,255,255,.9);
+  animation:floatUp 1.1s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity:0; transform:translate(-50%,-50%) scale(.5); }
+  18% { opacity:1; transform:translate(-50%,-70%) scale(1.15); }
+  100% { opacity:0; transform:translate(-50%,-200%) scale(1); }
+}
+.toast {
+  position:fixed; top:74px; left:50%; transform:translateX(-50%) translateY(-16px);
+  background:rgba(93,64,55,.93); color:#fff; padding:11px 22px; border-radius:999px;
+  font-size:14px; font-weight:700; z-index:400; opacity:0; pointer-events:none;
+  transition:.3s; max-width:86%; text-align:center; line-height:1.4;
+  box-shadow:0 8px 22px rgba(93,64,55,.3);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============ 徽章弹窗 ============ */
+.badge-modal-list { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:16px 0 4px; }
+.badge-modal-item { text-align:center; width:86px; }
+.badge-modal-item .bm-icon {
+  width:62px; height:62px; margin:0 auto 7px; border-radius:50%;
+  background:linear-gradient(135deg,#FFF3D6,#FFE0AC);
+  display:flex; align-items:center; justify-content:center; font-size:30px;
+  box-shadow:0 0 0 3px #FFD166 inset, 0 6px 14px rgba(255,209,102,.45);
+  animation:badgePop .5s cubic-bezier(.2,.8,.3,1.4) both;
+}
+@keyframes badgePop { from { transform:scale(0) rotate(-20deg); } to { transform:scale(1) rotate(0); } }
+.badge-modal-item .bm-name { font-size:12px; font-weight:800; }
+.badge-modal-item .bm-desc { font-size:10px; color:#B09B8F; font-weight:600; margin-top:2px; }
+
+/* ============ 空状态 ============ */
+.empty { padding:34px 16px; text-align:center; color:#B09B8F; }
+.empty .e-icon { font-size:42px; margin-bottom:10px; }
+.empty .e-text { font-size:14px; font-weight:700; line-height:1.7; }
+.empty .btn { margin-top:14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="app-title"><span>🏡</span> 家庭积分成长系统</div>
+    <div class="child-switch" id="childSwitch"></div>
+  </header>
+  <main>
+    <section class="page active" id="page-home"></section>
+    <section class="page" id="page-tasks"></section>
+    <section class="page" id="page-rewards"></section>
+    <section class="page" id="page-growth"></section>
+    <section class="page" id="page-settings"></section>
+  </main>
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-page="home" onclick="goPage('home')"><span class="nav-icon">🏠</span><span class="nav-text">首页</span></div>
+    <div class="nav-item" data-page="tasks" onclick="goPage('tasks')"><span class="nav-icon">✅</span><span class="nav-text">任务</span></div>
+    <div class="nav-item" data-page="rewards" onclick="goPage('rewards')"><span class="nav-icon">🎁</span><span class="nav-text">奖励</span></div>
+    <div class="nav-item" data-page="growth" onclick="goPage('growth')"><span class="nav-icon">🌱</span><span class="nav-text">成长</span></div>
+    <div class="nav-item" data-page="settings" onclick="goPage('settings')"><span class="nav-icon">⚙️</span><span class="nav-text">设置</span></div>
+  </nav>
+</div>
+
+<div class="modal-mask" id="modalMask" onclick="onMaskClick(event)"><div class="modal-panel" id="modalPanel" onclick="event.stopPropagation()"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================================================================
+   家庭积分成长系统 · 单文件版
+   数据保存在浏览器 LocalStorage，无需后端
+================================================================ */
+
+/* ============ 常量 ============ */
+var STORAGE_KEY = 'family_growth_v1';
+var WEEK_CN = ['日','一','二','三','四','五','六'];
+var TASK_CATS = ['生活','学习','阅读','运动','家务','其他'];
+var REWARD_CATS = ['娱乐','零食','出行','礼物','其他'];
+
+var CAT_STYLE = {
+  '生活': { bg:'#FFE3EC', color:'#E8638C', icon:'🌈' },
+  '学习': { bg:'#E3F2FF', color:'#3D8FD1', icon:'✏️' },
+  '阅读': { bg:'#F0E9FF', color:'#8465D6', icon:'📚' },
+  '运动': { bg:'#E4F7E9', color:'#3FA45B', icon:'⚽' },
+  '家务': { bg:'#FFF2E0', color:'#E08A2E', icon:'🧹' },
+  '其他': { bg:'#F0F0F2', color:'#8A8A94', icon:'✨' }
+};
+var REWARD_CAT_STYLE = {
+  '娱乐': { bg:'#E3F2FF', color:'#3D8FD1', icon:'🎬' },
+  '零食': { bg:'#FFE3EC', color:'#E8638C', icon:'🍬' },
+  '出行': { bg:'#E4F7E9', color:'#3FA45B', icon:'🚗' },
+  '礼物': { bg:'#FFF2E0', color:'#E08A2E', icon:'🎁' },
+  '其他': { bg:'#F0E9FF', color:'#8465D6', icon:'✨' }
+};
+
+var LEVELS = [
+  { lv:1, name:'成长萌芽',   icon:'🌱', min:0 },
+  { lv:2, name:'小小行动家', icon:'🌿', min:100 },
+  { lv:3, name:'生活小能手', icon:'🍀', min:300 },
+  { lv:4, name:'成长小达人', icon:'🌳', min:600 },
+  { lv:5, name:'超级小伙伴', icon:'🌟', min:1000 }
+];
+
+var BADGES = [
+  { id:'streak3',   icon:'🔥', name:'坚持小星星', desc:'连续完成3天' },
+  { id:'streak7',   icon:'🏆', name:'毅力小勇士', desc:'连续完成7天' },
+  { id:'read15',    icon:'📚', name:'阅读达人',   desc:'累计完成15次阅读任务' },
+  { id:'chore15',   icon:'🧹', name:'家务小能手', desc:'累计完成15次家务任务' },
+  { id:'life15',    icon:'💖', name:'家庭小帮手', desc:'累计完成15次生活任务' },
+  { id:'points500', icon:'⭐', name:'积分小富豪', desc:'累计获得500积分' }
+];
+
+/* ============ 工具函数 ============ */
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function fmtDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function todayStr() { return fmtDate(new Date()); }
+function fmtTime(d) { return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function nowStr() {
+  var d = new Date();
+  return fmtDate(d) + ' ' + fmtTime(d);
+}
+function dateCN(ds) {
+  var p = ds.split('-');
+  return (+p[1]) + '月' + (+p[2]) + '日';
+}
+
+/* ============ 数据 ============ */
+function defaultData() {
+  function mkChild(id, name, age, avatar) {
+    return {
+      id:id, name:name, age:age, avatar:avatar,
+      points:0, lifetime:0, badges:{},
+      tasks:[
+        { id:uid(), name:'整理书桌',   points:10, category:'生活', enabled:true },
+        { id:uid(), name:'作业表扬',   points:20, category:'学习', enabled:true },
+        { id:uid(), name:'阅读30分钟', points:10, category:'阅读', enabled:true },
+        { id:uid(), name:'分担家务',   points:10, category:'家务', enabled:true }
+      ],
+      rewards:[
+        { id:uid(), name:'看动画30分钟',    points:50,  category:'娱乐', enabled:true },
+        { id:uid(), name:'选择一次周末零食', points:100, category:'零食', enabled:true },
+        { id:uid(), name:'选择一次家庭活动', points:200, category:'出行', enabled:true },
+        { id:uid(), name:'买一本喜欢的书',   points:300, category:'礼物', enabled:true },
+        { id:uid(), name:'兑换一个小礼物',   points:500, category:'礼物', enabled:true }
+      ],
+      records:[], redemptions:[]
+    };
+  }
+  return { version:1, activeChildId:'c1', children:[ mkChild('c1','大宝',13,'👦'), mkChild('c2','小宝',8,'👧') ] };
+}
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (d && Array.isArray(d.children) && d.children.length) {
+        d.children.forEach(function(c){
+          c.name = c.name || '孩子'; c.age = c.age || 0; c.avatar = c.avatar || '🧒';
+          c.points = c.points || 0; c.lifetime = c.lifetime || 0;
+          c.badges = c.badges || {}; c.tasks = c.tasks || [];
+          c.rewards = c.rewards || []; c.records = c.records || []; c.redemptions = c.redemptions || [];
+        });
+        if (!d.children.some(function(c){ return c.id === d.activeChildId; })) d.activeChildId = d.children[0].id;
+        return d;
+      }
+    }
+  } catch(e) {}
+  var d0 = defaultData();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d0)); } catch(e){}
+  return d0;
+}
+
+var DATA = loadData();
+var currentPage = 'home';
+var recordTab = 'task';
+var formTmp = {};
+var renderedDate = todayStr();
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+  catch(e) { toast('⚠️ 数据保存失败，浏览器存储空间不足'); }
+}
+function getChild() {
+  for (var i=0;i<DATA.children.length;i++) if (DATA.children[i].id === DATA.activeChildId) return DATA.children[i];
+  return DATA.children[0];
+}
+
+/* ============ 统计逻辑 ============ */
+function todayRecords(c) {
+  var t = todayStr();
+  return c.records.filter(function(r){ return r.date === t; });
+}
+function doneMap(c) {
+  var m = {};
+  todayRecords(c).forEach(function(r){ m[r.taskId] = r; });
+  return m;
+}
+function todayPoints(c) {
+  return todayRecords(c).reduce(function(s,r){ return s + r.points; }, 0);
+}
+function weekStartStr() {
+  var d = new Date();
+  var day = d.getDay(); // 0=周日
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return fmtDate(d);
+}
+function weekPoints(c) {
+  var ws = weekStartStr();
+  return c.records.filter(function(r){ return r.date >= ws; }).reduce(function(s,r){ return s + r.points; }, 0);
+}
+/* 连续完成天数：从今天(或昨天)往回数，动态计算，撤销后自动修正 */
+function streak(c) {
+  var set = {};
+  c.records.forEach(function(r){ set[r.date] = 1; });
+  var d = new Date();
+  if (!set[fmtDate(d)]) {
+    d.setDate(d.getDate() - 1);
+    if (!set[fmtDate(d)]) return 0;
+  }
+  var n = 0;
+  while (set[fmtDate(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function levelOf(lifetime) {
+  var L = LEVELS[0];
+  for (var i=LEVELS.length-1;i>=0;i--) { if (lifetime >= LEVELS[i].min) { L = LEVELS[i]; break; } }
+  return L;
+}
+function nextLevel(lifetime) {
+  for (var i=0;i<LEVELS.length;i++) if (lifetime < LEVELS[i].min) return LEVELS[i];
+  return null;
+}
+function chartData(c) {
+  var arr = [];
+  for (var i=6;i>=0;i--) {
+    var d = new Date(); d.setDate(d.getDate() - i);
+    var ds = fmtDate(d);
+    var pts = c.records.filter(function(r){ return r.date === ds; }).reduce(function(s,r){ return s + r.points; }, 0);
+    arr.push({ ds:ds, pts:pts, label:(i===0?'今天':('周'+WEEK_CN[d.getDay()])), isToday:i===0 });
+  }
+  return arr;
+}
+function nextReward(c) {
+  var list = c.rewards.filter(function(r){ return r.enabled && r.points > c.points; })
+                      .sort(function(a,b){ return a.points - b.points; });
+  return list[0] || null;
+}
+
+/* 徽章解锁检查，返回本次新解锁的徽章数组 */
+function checkBadges(c) {
+  var s = streak(c);
+  var catCount = {};
+  c.records.forEach(function(r){ catCount[r.category] = (catCount[r.category]||0) + 1; });
+  var newly = [];
+  BADGES.forEach(function(b){
+    if (c.badges[b.id]) return;
+    var ok = false;
+    if (b.id === 'streak3')   ok = s >= 3;
+    if (b.id === 'streak7')   ok = s >= 7;
+    if (b.id === 'read15')    ok = (catCount['阅读']||0) >= 15;
+    if (b.id === 'chore15')   ok = (catCount['家务']||0) >= 15;
+    if (b.id === 'life15')    ok = (catCount['生活']||0) >= 15;
+    if (b.id === 'points500') ok = c.lifetime >= 500;
+    if (ok) { c.badges[b.id] = nowStr(); newly.push(b); }
+  });
+  return newly;
+}
+
+/* ============ 渲染 ============ */
+function renderAll() {
+  renderSwitch();
+  renderHome();
+  renderTasksPage();
+  renderRewardsPage();
+  renderGrowthPage();
+  renderSettingsPage();
+  animateProgress();
+}
+
+function catTagHTML(cat, styleMap) {
+  var st = (styleMap || CAT_STYLE)[cat] || CAT_STYLE['其他'];
+  return '<span class="cat-tag" style="background:' + st.bg + ';color:' + st.color + '">' + st.icon + ' ' + esc(cat) + '</span>';
+}
+
+function renderSwitch() {
+  var el = document.getElementById('childSwitch');
+  el.innerHTML = DATA.children.map(function(c){
+    var s = streak(c);
+    return '<div class="child-card ' + (c.id === DATA.activeChildId ? 'active' : '') + '" onclick="switchChild(\'' + c.id + '\')">' +
+      '<div class="avatar">' + c.avatar + '</div>' +
+      '<div class="cc-info">' +
+        '<div class="cc-name">' + esc(c.name) + '<span class="cc-age">' + c.age + '岁</span></div>' +
+        '<div class="cc-points">⭐ ' + c.points + ' 分</div>' +
+        '<div class="cc-streak">🔥 连续 ' + s + ' 天 · 今日 +' + todayPoints(c) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ---- 首页 ---- */
+function renderHome() {
+  var c = getChild();
+  var L = levelOf(c.lifetime);
+  var done = doneMap(c);
+  var enabled = c.tasks.filter(function(t){ return t.enabled; });
+  var doneCount = enabled.filter(function(t){ return done[t.id]; }).length;
+  var tPts = todayPoints(c);
+  var redCount = c.redemptions.length;
+
+  var nrHTML = '';
+  var nr = nextReward(c);
+  if (nr) {
+    var diff = nr.points - c.points;
+    var pct = Math.min(100, Math.round(c.points / nr.points * 100));
+    nrHTML = '<div class="card">' +
+      '<div class="nr-head">🎯 距离下一个奖励</div>' +
+      '<div class="nr-body">' +
+        '<div><div class="nr-name">' + esc(nr.name) + '</div>' +
+        '<div class="nr-diff">还差 <b>' + diff + '</b> 积分（' + c.points + ' / ' + nr.points + '）</div></div>' +
+        '<div class="nr-pct">' + pct + '%</div>' +
+      '</div>' +
+      '<div class="progress-track"><div class="progress-fill" data-w="' + pct + '"></div></div>' +
+    '</div>';
+  } else {
+    var anyEnabled = c.rewards.some(function(r){ return r.enabled; });
+    var anyCan = c.rewards.some(function(r){ return r.enabled && r.points <= c.points; });
+    var msg = !anyEnabled ? '还没有启用的奖励，去「设置」里添加吧'
+            : anyCan ? '现在所有奖励都可以兑换啦 🎉' : '已经是最棒的兑换状态啦';
+    nrHTML = '<div class="card"><div class="nr-head">🎯 距离下一个奖励</div>' +
+      '<div class="nr-diff" style="font-size:13px">' + msg + '</div></div>';
+  }
+
+  var tasksHTML = '';
+  if (!enabled.length) {
+    tasksHTML = '<div class="empty"><div class="e-icon">🌱</div><div class="e-text">还没有任务哦<br>家长可以在「设置」中添加任务</div>' +
+      '<button class="btn btn-primary" onclick="goPage(\'settings\')">去设置任务</button></div>';
+  } else {
+    var show = enabled.slice(0, 5);
+    tasksHTML = show.map(function(t){ return taskItemHTML(c, t); }).join('');
+    if (enabled.length > 5) {
+      tasksHTML += '<div style="text-align:center;margin-top:2px"><span class="section-link" onclick="goPage(\'tasks\')">还有 ' + (enabled.length - 5) + ' 个任务，查看全部 ›</span></div>';
+    }
+  }
+
+  document.getElementById('page-home').innerHTML =
+    '<div class="hero-card">' +
+      '<div class="hero-head"><div class="hero-hello">' + esc(c.name) + '的今日成长</div>' +
+      '<div class="hero-lv">' + L.icon + ' Lv.' + L.lv + ' ' + L.name + '</div></div>' +
+      '<div class="hero-points-wrap"><div class="hero-big">⭐ ' + c.points + '</div>' +
+      '<div class="hero-big-label">当前积分</div></div>' +
+      '<div class="hero-stats">' +
+        '<div class="hero-stat"><span class="hs-v">✅ ' + doneCount + '/' + enabled.length + '</span><span class="hs-l">今日任务</span></div>' +
+        '<div class="hero-stat"><span class="hs-v">+' + tPts + '</span><span class="hs-l">今日积分</span></div>' +
+        '<div class="hero-stat"><span class="hs-v">🔥 ' + streak(c) + '天</span><span class="hs-l">连续打卡</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="stat-row">' +
+      '<div class="stat-mini"><div class="v">' + weekPoints(c) + '</div><div class="l">本周积分</div></div>' +
+      '<div class="stat-mini"><div class="v">' + redCount + '</div><div class="l">已兑换奖励</div></div>' +
+      '<div class="stat-mini"><div class="v">' + c.lifetime + '</div><div class="l">累计获得</div></div>' +
+    '</div>' +
+    nrHTML +
+    '<div class="card"><div class="section-head"><span>✅ 今日任务</span><span class="section-link" onclick="goPage(\'tasks\')">全部 ›</span></div>' +
+      (enabled.length && doneCount === enabled.length ? '<div class="all-done-banner">🎉 今日任务全部完成，太棒了！</div>' : '') +
+      tasksHTML +
+    '</div>' +
+    chartHTML(c);
+}
+
+function chartHTML(c) {
+  var arr = chartData(c);
+  var max = 1;
+  arr.forEach(function(a){ if (a.pts > max) max = a.pts; });
+  var cols = arr.map(function(a){
+    var h = Math.max(6, Math.round(a.pts / max * 100));
+    return '<div class="chart-col ' + (a.isToday ? 'today' : '') + '">' +
+      '<div class="chart-val">' + (a.pts > 0 ? '+' + a.pts : '') + '</div>' +
+      '<div class="chart-bar" style="height:' + h + '%"></div>' +
+      '<div class="chart-label">' + a.label + '</div></div>';
+  }).join('');
+  return '<div class="card"><div class="section-head"><span>📊 最近7天积分</span><span class="chart-total">本周 +' + weekPoints(c) + ' 分</span></div>' +
+    '<div class="chart">' + cols + '</div></div>';
+}
+
+/* ---- 今日任务页 ---- */
+function taskItemHTML(c, t) {
+  var done = doneMap(c);
+  var rec = done[t.id];
+  var cat = CAT_STYLE[t.category] || CAT_STYLE['其他'];
+  if (rec) {
+    return '<div class="task-item done" data-rec="' + rec.id + '">' +
+      '<div class="task-info"><div class="task-name">' + esc(t.name) + '</div>' +
+      '<div class="task-meta">' + catTagHTML(t.category) + '<span class="task-points earned">+' + rec.points + '分</span></div></div>' +
+      '<div class="done-box"><div class="done-time">✓ ' + rec.time + ' 完成</div>' +
+      '<button class="btn-undo" onclick="undoRecord(\'' + rec.id + '\')">撤销</button></div></div>';
+  }
+  return '<div class="task-item">' +
+    '<div class="task-info"><div class="task-name">' + esc(t.name) + '</div>' +
+    '<div class="task-meta">' + catTagHTML(t.category) + '<span class="task-points">+' + t.points + '分</span></div></div>' +
+    '<button class="btn-done" onclick="completeTask(\'' + t.id + '\', event)">完成</button></div>';
+}
+
+function renderTasksPage() {
+  var c = getChild();
+  var d = new Date();
+  var enabled = c.tasks.filter(function(t){ return t.enabled; });
+  var done = doneMap(c);
+  var doneCount = enabled.filter(function(t){ return done[t.id]; }).length;
+
+  var body = '';
+  if (!enabled.length) {
+    body = '<div class="empty"><div class="e-icon">🌱</div><div class="e-text">今天还没有可做的任务<br>家长可以在「设置」中配置任务</div>' +
+      '<button class="btn btn-primary" onclick="goPage(\'settings\')">去设置任务</button></div>';
+  } else {
+    TASK_CATS.forEach(function(cat){
+      var list = enabled.filter(function(t){ return t.category === cat; });
+      if (!list.length) return;
+      var st = CAT_STYLE[cat];
+      body += '<div class="cat-group"><div class="cat-head"><span class="cat-dot" style="background:' + st.color + '"></span>' + st.icon + ' ' + cat + '</div>' +
+        list.map(function(t){ return taskItemHTML(c, t); }).join('') + '</div>';
+    });
+    /* 未识别分类兜底 */
+    var others = enabled.filter(function(t){ return TASK_CATS.indexOf(t.category) < 0; });
+    if (others.length) {
+      body += '<div class="cat-group"><div class="cat-head"><span class="cat-dot" style="background:#8A8A94"></span>✨ 其他</div>' +
+        others.map(function(t){ return taskItemHTML(c, t); }).join('') + '</div>';
+    }
+  }
+
+  document.getElementById('page-tasks').innerHTML =
+    '<div class="date-banner"><div class="db-date">📅 ' + (d.getMonth()+1) + '月' + d.getDate() + '日 · 星期' + WEEK_CN[d.getDay()] + '</div>' +
+    '<div class="db-prog">已完成 ' + doneCount + ' / ' + enabled.length + '</div></div>' +
+    (enabled.length && doneCount === enabled.length ? '<div class="all-done-banner">🎉 今日任务全部完成，给自己鼓个掌！</div>' : '') +
+    body;
+}
+
+/* ---- 奖励中心 ---- */
+function renderRewardsPage() {
+  var c = getChild();
+  var enabled = c.rewards.filter(function(r){ return r.enabled; });
+  var body = '';
+  if (!enabled.length) {
+    body = '<div class="empty"><div class="e-icon">🎁</div><div class="e-text">还没有奖励哦<br>家长可以在「设置」中添加奖励</div>' +
+      '<button class="btn btn-primary" onclick="goPage(\'settings\')">去设置奖励</button></div>';
+  } else {
+    body = enabled.map(function(r){
+      var st = REWARD_CAT_STYLE[r.category] || REWARD_CAT_STYLE['其他'];
+      var can = c.points >= r.points;
+      var act = can
+        ? '<button class="btn-redeem" onclick="openRedeemConfirm(\'' + r.id + '\')">立即兑换</button>'
+        : '<div class="not-enough">还差 ' + (r.points - c.points) + ' 分</div>';
+      return '<div class="reward-item">' +
+        '<div class="reward-icon" style="background:' + st.bg + '">' + st.icon + '</div>' +
+        '<div class="reward-info"><div class="reward-name">' + esc(r.name) + '</div>' +
+        '<div class="reward-meta">' + catTagHTML(r.category, REWARD_CAT_STYLE) + '<span class="reward-points">⭐ ' + r.points + '分</span></div></div>' +
+        act + '</div>';
+    }).join('');
+  }
+  document.getElementById('page-rewards').innerHTML =
+    '<div class="points-banner"><div class="pb-label">' + esc(c.name) + '的当前积分</div>' +
+    '<div class="pb-num">⭐ ' + c.points + '</div></div>' + body;
+}
+
+/* ---- 成长记录页 ---- */
+function renderGrowthPage() {
+  var c = getChild();
+  var L = levelOf(c.lifetime);
+  var NL = nextLevel(c.lifetime);
+  var done = doneMap(c);
+  var enabled = c.tasks.filter(function(t){ return t.enabled; });
+  var doneCount = enabled.filter(function(t){ return done[t.id]; }).length;
+
+  var lvPct = NL ? Math.min(100, Math.round((c.lifetime - L.min) / (NL.min - L.min) * 100)) : 100;
+  var lvSub = NL
+    ? '累计获得 ' + c.lifetime + ' 积分 · 还差 ' + (NL.min - c.lifetime) + ' 分升到 Lv.' + NL.lv
+    : '累计获得 ' + c.lifetime + ' 积分 · 已达最高等级 🎉';
+
+  var badgeHTML = BADGES.map(function(b){
+    var unlocked = !!c.badges[b.id];
+    return '<div class="badge ' + (unlocked ? 'unlocked' : 'locked') + '">' +
+      '<div class="b-icon">' + (unlocked ? b.icon : '🔒') + '</div>' +
+      '<div class="b-name">' + esc(b.name) + '</div>' +
+      '<div class="b-desc">' + esc(b.desc) + (unlocked ? '' : '') + '</div></div>';
+  }).join('');
+
+  /* 记录列表 */
+  var recHTML = '';
+  if (recordTab === 'task') {
+    if (!c.records.length) {
+      recHTML = '<div class="empty"><div class="e-icon">📖</div><div class="e-text">还没有任务记录<br>快去完成第一个任务吧</div></div>';
+    } else {
+      var byDate = {};
+      c.records.forEach(function(r){ (byDate[r.date] = byDate[r.date] || []).push(r); });
+      var dates = Object.keys(byDate).sort().reverse();
+      recHTML = dates.map(function(ds){
+        var items = byDate[ds].slice().reverse().map(function(r){
+          var st = CAT_STYLE[r.category] || CAT_STYLE['其他'];
+          return '<div class="record-item"><div class="ri-icon" style="background:' + st.bg + '">' + st.icon + '</div>' +
+            '<div class="ri-info"><div class="ri-name">' + esc(r.name) + '</div>' +
+            '<div class="ri-time">' + dateCN(ds) + ' ' + r.time + '</div></div>' +
+            '<div class="ri-pts plus">+' + r.points + '</div></div>';
+        }).join('');
+        return '<div class="record-date">' + (ds === todayStr() ? '今天 · ' + dateCN(ds) : dateCN(ds)) + '</div>' + items;
+      }).join('');
+    }
+  } else {
+    if (!c.redemptions.length) {
+      recHTML = '<div class="empty"><div class="e-icon">🎁</div><div class="e-text">还没有兑换记录<br>攒够积分来换个心仪的奖励吧</div></div>';
+    } else {
+      recHTML = c.redemptions.map(function(r){
+        var st = REWARD_CAT_STYLE[r.category] || REWARD_CAT_STYLE['其他'];
+        return '<div class="record-item"><div class="ri-icon" style="background:' + st.bg + '">' + st.icon + '</div>' +
+          '<div class="ri-info"><div class="ri-name">' + esc(r.name) + '</div>' +
+          '<div class="ri-time">' + dateCN(r.date) + ' ' + r.time + '</div></div>' +
+          '<div class="ri-pts minus">-' + r.points + '</div></div>';
+      }).join('');
+    }
+  }
+
+  document.getElementById('page-growth').innerHTML =
+    '<div class="level-card"><div class="level-icon">' + L.icon + '</div>' +
+      '<div class="level-info"><div class="level-name">Lv.' + L.lv + ' ' + L.name + '</div>' +
+      '<div class="level-sub">' + lvSub + '</div>' +
+      '<div class="progress-track"><div class="progress-fill" data-w="' + lvPct + '"></div></div></div></div>' +
+    '<div class="stats-grid">' +
+      '<div class="stat-cell"><div class="v">' + doneCount + '</div><div class="l">今日完成</div></div>' +
+      '<div class="stat-cell"><div class="v">+' + todayPoints(c) + '</div><div class="l">今日积分</div></div>' +
+      '<div class="stat-cell"><div class="v">' + c.points + '</div><div class="l">当前积分</div></div>' +
+      '<div class="stat-cell"><div class="v">' + weekPoints(c) + '</div><div class="l">本周积分</div></div>' +
+      '<div class="stat-cell"><div class="v">' + streak(c) + '天</div><div class="l">连续打卡</div></div>' +
+      '<div class="stat-cell"><div class="v">' + c.redemptions.length + '</div><div class="l">已兑换奖励</div></div>' +
+    '</div>' +
+    '<div class="card"><div class="section-head"><span>🏅 我的徽章</span><span class="chart-total">' + Object.keys(c.badges).length + ' / ' + BADGES.length + '</span></div>' +
+      '<div class="badge-grid">' + badgeHTML + '</div></div>' +
+    chartHTML(c) +
+    '<div class="card"><div class="section-head"><span>📜 成长记录</span></div>' +
+      '<div class="record-tabs">' +
+        '<div class="rtab ' + (recordTab === 'task' ? 'on' : '') + '" onclick="switchRecordTab(\'task\')">📖 任务记录</div>' +
+        '<div class="rtab ' + (recordTab === 'redeem' ? 'on' : '') + '" onclick="switchRecordTab(\'redeem\')">🎁 兑换记录</div>' +
+      '</div>' + recHTML + '</div>';
+}
+
+/* ---- 设置页 ---- */
+function manageTaskHTML(t) {
+  var cat = CAT_STYLE[t.category] || CAT_STYLE['其他'];
+  return '<div class="manage-item ' + (t.enabled ? '' : 'off') + '">' +
+    '<label class="switch"><input type="checkbox" ' + (t.enabled ? 'checked' : '') + ' onchange="toggleTask(\'' + t.id + '\')"><span class="slider"></span></label>' +
+    '<div class="mi-info"><div class="mi-name">' + esc(t.name) + '</div>' +
+    '<div class="mi-meta">' + catTagHTML(t.category) + '<span class="mi-pts">+' + t.points + '分</span>' +
+    (t.enabled ? '' : '<span class="mi-off">已停用</span>') + '</div></div>' +
+    '<button class="icon-btn" onclick="openTaskForm(\'' + t.id + '\')">✏️</button>' +
+    '<button class="icon-btn del" onclick="delTask(\'' + t.id + '\')">🗑️</button></div>';
+}
+function manageRewardHTML(r) {
+  var cat = REWARD_CAT_STYLE[r.category] || REWARD_CAT_STYLE['其他'];
+  return '<div class="manage-item ' + (r.enabled ? '' : 'off') + '">' +
+    '<label class="switch"><input type="checkbox" ' + (r.enabled ? 'checked' : '') + ' onchange="toggleReward(\'' + r.id + '\')"><span class="slider"></span></label>' +
+    '<div class="mi-info"><div class="mi-name">' + esc(r.name) + '</div>' +
+    '<div class="mi-meta">' + catTagHTML(r.category, REWARD_CAT_STYLE) + '<span class="mi-pts">⭐ ' + r.points + '分</span>' +
+    (r.enabled ? '' : '<span class="mi-off">已停用</span>') + '</div></div>' +
+    '<button class="icon-btn" onclick="openRewardForm(\'' + r.id + '\')">✏️</button>' +
+    '<button class="icon-btn del" onclick="delReward(\'' + r.id + '\')">🗑️</button></div>';
+}
+
+function renderSettingsPage() {
+  var c = getChild();
+  document.getElementById('page-settings').innerHTML =
+    '<div class="card"><div class="settings-title">👤 家庭成员</div>' +
+      DATA.children.map(function(ch){
+        var L = levelOf(ch.lifetime);
+        return '<div class="member-item"><div class="member-avatar">' + ch.avatar + '</div>' +
+          '<div class="member-info"><div class="member-name">' + esc(ch.name) + '<span class="member-age"> ' + ch.age + '岁</span></div>' +
+          '<div class="member-meta">⭐ ' + ch.points + '分 · ' + L.icon + ' Lv.' + L.lv + ' · 🔥 连续' + streak(ch) + '天</div></div>' +
+          '<button class="icon-btn" onclick="openChildForm(\'' + ch.id + '\')">✏️</button></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="card"><div class="settings-title">📋 任务管理 <span class="manage-child">当前：' + esc(c.name) + '</span></div>' +
+      '<div class="manage-tip">💡 家长专区：可新增、修改、删除任务，调整积分，启用/停用。切换顶部孩子头像，可分别管理每个孩子的任务。</div>' +
+      (c.tasks.length ? c.tasks.map(manageTaskHTML).join('') : '<div class="empty-mini">还没有任务，点击下方按钮添加</div>') +
+      '<button class="btn btn-primary btn-block" style="margin-top:14px" onclick="openTaskForm(null)">➕ 新增任务</button>' +
+    '</div>' +
+    '<div class="card"><div class="settings-title">🎁 奖励管理 <span class="manage-child">当前：' + esc(c.name) + '</span></div>' +
+      '<div class="manage-tip">💡 设置孩子可以兑换的奖励和所需积分，同样支持新增、修改、删除和启停。</div>' +
+      (c.rewards.length ? c.rewards.map(manageRewardHTML).join('') : '<div class="empty-mini">还没有奖励，点击下方按钮添加</div>') +
+      '<button class="btn btn-primary btn-block" style="margin-top:14px" onclick="openRewardForm(null)">➕ 新增奖励</button>' +
+    '</div>' +
+    '<div class="card"><div class="settings-title">💾 数据管理</div>' +
+      '<div class="manage-tip">数据自动保存在本机浏览器中，刷新页面不会丢失。⚠️ 清除浏览器缓存或更换设备会导致数据丢失，建议定期导出备份。</div>' +
+      '<div class="data-btns"><button class="btn btn-ghost" onclick="exportData()">📤 导出备份</button>' +
+      '<button class="btn btn-ghost" onclick="importData()">📥 导入备份</button></div>' +
+      '<button class="btn btn-danger btn-block" style="margin-top:10px" onclick="resetAll()">🗑️ 恢复默认（清空所有数据）</button>' +
+    '</div>' +
+    '<div class="version-tip">家庭积分成长系统 · 单文件本地版 · 数据仅保存在本机</div>';
+}
+
+/* 进度条入场动画 */
+function animateProgress() {
+  setTimeout(function(){
+    document.querySelectorAll('.progress-fill[data-w]').forEach(function(el){
+      el.style.width = el.getAttribute('data-w') + '%';
+    });
+  }, 60);
+}
+
+/* ============ 页面导航 ============ */
+function goPage(p) {
+  currentPage = p;
+  document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
+  var target = document.getElementById('page-' + p);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el){
+    el.classList.toggle('active', el.getAttribute('data-page') === p);
+  });
+  window.scrollTo(0, 0);
+}
+function switchChild(id) {
+  if (DATA.activeChildId === id) return;
+  DATA.activeChildId = id;
+  save();
+  renderAll();
+}
+function switchRecordTab(t) {
+  recordTab = t;
+  renderGrowthPage();
+}
+
+/* ============ 核心业务：完成任务 ============ */
+function completeTask(taskId, ev) {
+  var c = getChild();
+  var task = null;
+  c.tasks.forEach(function(t){ if (t.id === taskId) task = t; });
+  if (!task || !task.enabled) return;
+  var done = doneMap(c);
+  if (done[taskId]) { toast('这个任务今天已经完成过啦'); return; }
+
+  var now = new Date();
+  c.records.push({
+    id: uid(), date: todayStr(), time: fmtTime(now),
+    taskId: taskId, name: task.name, category: task.category, points: task.points
+  });
+  c.points += task.points;
+  c.lifetime += task.points;
+  var newBadges = checkBadges(c);
+  save();
+
+  /* 飘字动画 */
+  var rect = null;
+  try { rect = ev.target.getBoundingClientRect(); } catch(e){}
+  if (rect) floatScore('+' + task.points + '分', rect.left + rect.width/2, rect.top);
+
+  /* 卡片闪绿动画后再重渲染 */
+  var item = null;
+  try { item = ev.target.closest('.task-item'); } catch(e){}
+  if (item) item.classList.add('completing');
+  setTimeout(function(){
+    renderAll();
+    toast('🎉 太棒了！' + task.name + ' +' + task.points + '分');
+    if (newBadges.length) setTimeout(function(){ showBadgeModal(newBadges); }, 700);
+  }, item ? 450 : 0);
+}
+
+function undoRecord(recId) {
+  var c = getChild();
+  var rec = null;
+  c.records.forEach(function(r){ if (r.id === recId) rec = r; });
+  if (!rec) return;
+  c.records = c.records.filter(function(r){ return r.id !== recId; });
+  c.points = Math.max(0, c.points - rec.points);
+  c.lifetime = Math.max(0, c.lifetime - rec.points);
+  save();
+  renderAll();
+  toast('已撤销「' + rec.name + '」，积分已退回');
+}
+
+/* ============ 核心业务：兑换奖励 ============ */
+function openRedeemConfirm(rewardId) {
+  var c = getChild();
+  var r = null;
+  c.rewards.forEach(function(x){ if (x.id === rewardId) r = x; });
+  if (!r) return;
+  if (c.points < r.points) { toast('积分还不够哦，继续加油！'); renderAll(); return; }
+  openModal(
+    '<div class="modal-center-icon">🎁</div>' +
+    '<div class="modal-center-title">确认兑换这个奖励吗？</div>' +
+    '<div class="modal-center-text">「' + esc(r.name) + '」需要 <b style="color:#F0662F">' + r.points + '</b> 积分<br>' +
+    '当前积分 ' + c.points + ' 分 → 兑换后剩余 <b style="color:#4CAF76">' + (c.points - r.points) + '</b> 分</div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">再想想</button>' +
+    '<button class="btn btn-green" onclick="doRedeem(\'' + r.id + '\')">确认兑换</button></div>', true);
+}
+function doRedeem(rewardId) {
+  var c = getChild();
+  var r = null;
+  c.rewards.forEach(function(x){ if (x.id === rewardId) r = x; });
+  if (!r) { closeModal(); return; }
+  if (c.points < r.points) { closeModal(); toast('积分不足'); renderAll(); return; }
+  var now = new Date();
+  c.points -= r.points;
+  c.redemptions.unshift({
+    id: uid(), date: todayStr(), time: fmtTime(now),
+    name: r.name, category: r.category, points: r.points
+  });
+  save();
+  closeModal();
+  renderAll();
+  toast('🎉 兑换成功！「' + r.name + '」记得兑现给孩子哦');
+}
+
+/* ============ 任务管理 ============ */
+function openTaskForm(id) {
+  var c = getChild();
+  var t = null;
+  if (id) c.tasks.forEach(function(x){ if (x.id === id) t = x; });
+  formTmp = { type:'task', id: id || null, cat: t ? t.category : '生活' };
+  var chips = TASK_CATS.map(function(cat){
+    return '<button class="chip ' + (cat === formTmp.cat ? 'on' : '') + '" data-cat="' + cat + '" onclick="pickCat(this,\'' + cat + '\')">' + cat + '</button>';
+  }).join('');
+  openModal(
+    '<div class="modal-title">' + (t ? '✏️ 修改任务' : '➕ 新增任务') + '</div>' +
+    '<div class="form-item"><div class="form-label">任务名称</div>' +
+    '<input class="form-input" id="f-name" maxlength="20" placeholder="例如：整理书桌" value="' + (t ? esc(t.name) : '') + '"></div>' +
+    '<div class="form-item"><div class="form-label">完成可获得的积分</div>' +
+    '<input class="form-input" id="f-points" type="number" min="1" max="999" inputmode="numeric" placeholder="例如：10" value="' + (t ? t.points : 10) + '"></div>' +
+    '<div class="form-item"><div class="form-label">任务分类</div><div class="chips" id="f-cats">' + chips + '</div></div>' +
+    '<div class="form-item form-row"><div class="form-label" style="margin:0">是否启用</div>' +
+    '<label class="switch"><input type="checkbox" id="f-enabled" ' + (!t || t.enabled ? 'checked' : '') + '><span class="slider"></span></label></div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="submitTaskForm()">保存</button></div>');
+}
+function pickCat(el, cat) {
+  formTmp.cat = cat;
+  document.querySelectorAll('#f-cats .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+}
+function submitTaskForm() {
+  var c = getChild();
+  var name = (document.getElementById('f-name').value || '').trim();
+  var pts = parseInt(document.getElementById('f-points').value, 10);
+  var enabled = document.getElementById('f-enabled').checked;
+  if (!name) { toast('请填写任务名称'); return; }
+  if (!pts || pts < 1 || pts > 999) { toast('积分请填写 1~999 之间的整数'); return; }
+  if (formTmp.id) {
+    c.tasks.forEach(function(t){
+      if (t.id === formTmp.id) { t.name = name; t.points = pts; t.category = formTmp.cat; t.enabled = enabled; }
+    });
+    toast('✅ 任务已更新');
+  } else {
+    c.tasks.push({ id: uid(), name: name, points: pts, category: formTmp.cat, enabled: enabled });
+    toast('✅ 新任务已添加');
+  }
+  save(); closeModal(); renderAll();
+}
+function toggleTask(id) {
+  var c = getChild();
+  c.tasks.forEach(function(t){ if (t.id === id) t.enabled = !t.enabled; });
+  save(); renderAll();
+}
+function delTask(id) {
+  var c = getChild();
+  var t = null;
+  c.tasks.forEach(function(x){ if (x.id === id) t = x; });
+  if (!t) return;
+  openModal(
+    '<div class="modal-center-icon">🗑️</div>' +
+    '<div class="modal-center-title">删除这个任务？</div>' +
+    '<div class="modal-center-text">「' + esc(t.name) + '」将被删除，不可恢复<br>已完成的历史记录仍会保留</div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-danger" onclick="doDelTask(\'' + id + '\')">删除</button></div>', true);
+}
+function doDelTask(id) {
+  var c = getChild();
+  c.tasks = c.tasks.filter(function(t){ return t.id !== id; });
+  save(); closeModal(); renderAll();
+  toast('任务已删除');
+}
+
+/* ============ 奖励管理 ============ */
+function openRewardForm(id) {
+  var c = getChild();
+  var r = null;
+  if (id) c.rewards.forEach(function(x){ if (x.id === id) r = x; });
+  formTmp = { type:'reward', id: id || null, cat: r ? r.category : '娱乐' };
+  var chips = REWARD_CATS.map(function(cat){
+    return '<button class="chip ' + (cat === formTmp.cat ? 'on' : '') + '" data-cat="' + cat + '" onclick="pickCat(this,\'' + cat + '\')">' + cat + '</button>';
+  }).join('');
+  openModal(
+    '<div class="modal-title">' + (r ? '✏️ 修改奖励' : '➕ 新增奖励') + '</div>' +
+    '<div class="form-item"><div class="form-label">奖励名称</div>' +
+    '<input class="form-input" id="f-name" maxlength="30" placeholder="例如：看动画30分钟" value="' + (r ? esc(r.name) : '') + '"></div>' +
+    '<div class="form-item"><div class="form-label">兑换所需积分</div>' +
+    '<input class="form-input" id="f-points" type="number" min="1" max="99999" inputmode="numeric" placeholder="例如：50" value="' + (r ? r.points : 50) + '"></div>' +
+    '<div class="form-item"><div class="form-label">奖励分类</div><div class="chips" id="f-cats">' + chips + '</div></div>' +
+    '<div class="form-item form-row"><div class="form-label" style="margin:0">是否启用</div>' +
+    '<label class="switch"><input type="checkbox" id="f-enabled" ' + (!r || r.enabled ? 'checked' : '') + '><span class="slider"></span></label></div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="submitRewardForm()">保存</button></div>');
+}
+function submitRewardForm() {
+  var c = getChild();
+  var name = (document.getElementById('f-name').value || '').trim();
+  var pts = parseInt(document.getElementById('f-points').value, 10);
+  var enabled = document.getElementById('f-enabled').checked;
+  if (!name) { toast('请填写奖励名称'); return; }
+  if (!pts || pts < 1 || pts > 99999) { toast('积分请填写 1~99999 之间的整数'); return; }
+  if (formTmp.id) {
+    c.rewards.forEach(function(r){
+      if (r.id === formTmp.id) { r.name = name; r.points = pts; r.category = formTmp.cat; r.enabled = enabled; }
+    });
+    toast('✅ 奖励已更新');
+  } else {
+    c.rewards.push({ id: uid(), name: name, points: pts, category: formTmp.cat, enabled: enabled });
+    toast('✅ 新奖励已添加');
+  }
+  save(); closeModal(); renderAll();
+}
+function toggleReward(id) {
+  var c = getChild();
+  c.rewards.forEach(function(r){ if (r.id === id) r.enabled = !r.enabled; });
+  save(); renderAll();
+}
+function delReward(id) {
+  var c = getChild();
+  var r = null;
+  c.rewards.forEach(function(x){ if (x.id === id) r = x; });
+  if (!r) return;
+  openModal(
+    '<div class="modal-center-icon">🗑️</div>' +
+    '<div class="modal-center-title">删除这个奖励？</div>' +
+    '<div class="modal-center-text">「' + esc(r.name) + '」将被删除，不可恢复<br>历史兑换记录仍会保留</div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-danger" onclick="doDelReward(\'' + id + '\')">删除</button></div>', true);
+}
+function doDelReward(id) {
+  var c = getChild();
+  c.rewards = c.rewards.filter(function(r){ return r.id !== id; });
+  save(); closeModal(); renderAll();
+  toast('奖励已删除');
+}
+
+/* ============ 孩子信息编辑 ============ */
+function openChildForm(id) {
+  var ch = null;
+  DATA.children.forEach(function(x){ if (x.id === id) ch = x; });
+  if (!ch) return;
+  formTmp = { type:'child', id: id };
+  var avatars = ['👦','👧','🧒','🐯','🐰','🐼','🦊','🐧'];
+  var chips = avatars.map(function(a){
+    return '<button class="chip ' + (a === ch.avatar ? 'on' : '') + '" style="font-size:18px" onclick="pickAvatar(this,\'' + a + '\')">' + a + '</button>';
+  }).join('');
+  formTmp.avatar = ch.avatar;
+  openModal(
+    '<div class="modal-title">✏️ 编辑孩子信息</div>' +
+    '<div class="form-item"><div class="form-label">姓名</div>' +
+    '<input class="form-input" id="f-name" maxlength="10" value="' + esc(ch.name) + '"></div>' +
+    '<div class="form-item"><div class="form-label">年龄</div>' +
+    '<input class="form-input" id="f-age" type="number" min="1" max="99" inputmode="numeric" value="' + ch.age + '"></div>' +
+    '<div class="form-item"><div class="form-label">头像</div><div class="chips" id="f-avatars">' + chips + '</div></div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="submitChildForm()">保存</button></div>');
+}
+function pickAvatar(el, a) {
+  formTmp.avatar = a;
+  document.querySelectorAll('#f-avatars .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+}
+function submitChildForm() {
+  var name = (document.getElementById('f-name').value || '').trim();
+  var age = parseInt(document.getElementById('f-age').value, 10);
+  if (!name) { toast('请填写姓名'); return; }
+  if (!age || age < 1 || age > 99) { toast('年龄请填写 1~99 之间的整数'); return; }
+  DATA.children.forEach(function(ch){
+    if (ch.id === formTmp.id) { ch.name = name; ch.age = age; ch.avatar = formTmp.avatar || ch.avatar; }
+  });
+  save(); closeModal(); renderAll();
+  toast('✅ 孩子信息已更新');
+}
+
+/* ============ 数据备份 ============ */
+function exportData() {
+  var text = JSON.stringify(DATA, null, 2);
+  formTmp.exportText = text;
+  openModal(
+    '<div class="modal-title">📤 导出备份</div>' +
+    '<div class="manage-tip">长按或全选复制下方文本，保存到备忘录/微信收藏；也可以点击「下载备份文件」。</div>' +
+    '<textarea class="form-input" id="f-export" readonly>' + esc(text) + '</textarea>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="copyExport()">📋 复制</button>' +
+    '<button class="btn btn-primary" onclick="downloadExport()">⬇️ 下载备份文件</button></div>' +
+    '<div class="form-btns"><button class="btn btn-ghost btn-block" onclick="closeModal()">关闭</button></div>');
+}
+function copyExport() {
+  var ta = document.getElementById('f-export');
+  ta.focus(); ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){}
+  if (!ok && navigator.clipboard) {
+    navigator.clipboard.writeText(formTmp.exportText || '').then(function(){ toast('📋 已复制，请粘贴保存'); }, function(){ toast('复制失败，请手动长按复制'); });
+    return;
+  }
+  toast(ok ? '📋 已复制，请粘贴保存' : '复制失败，请手动长按复制');
+}
+function downloadExport() {
+  try {
+    var blob = new Blob([formTmp.exportText || ''], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '家庭积分成长系统备份_' + todayStr() + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 300);
+    toast('⬇️ 已开始下载备份文件');
+  } catch(e) { toast('下载失败，请使用复制方式备份'); }
+}
+function importData() {
+  openModal(
+    '<div class="modal-title">📥 导入备份</div>' +
+    '<div class="manage-tip">将之前导出的备份数据粘贴到下方，点击导入即可恢复。⚠️ 导入会覆盖当前所有数据，请谨慎操作。</div>' +
+    '<textarea class="form-input" id="f-import" placeholder="在此粘贴备份文本..."></textarea>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="doImport()">导入数据</button></div>');
+}
+function doImport() {
+  var text = (document.getElementById('f-import').value || '').trim();
+  if (!text) { toast('请先粘贴备份数据'); return; }
+  try {
+    var d = JSON.parse(text);
+    if (!d || !Array.isArray(d.children) || !d.children.length) throw new Error('格式不对');
+    d.children.forEach(function(c){
+      c.name = c.name || '孩子'; c.age = c.age || 0; c.avatar = c.avatar || '🧒';
+      c.points = c.points || 0; c.lifetime = c.lifetime || 0;
+      c.badges = c.badges || {}; c.tasks = c.tasks || [];
+      c.rewards = c.rewards || []; c.records = c.records || []; c.redemptions = c.redemptions || [];
+    });
+    if (!d.children.some(function(c){ return c.id === d.activeChildId; })) d.activeChildId = d.children[0].id;
+    DATA = d;
+    save(); closeModal(); renderAll();
+    toast('✅ 备份导入成功');
+  } catch(e) { toast('导入失败：备份数据格式不正确'); }
+}
+function resetAll() {
+  openModal(
+    '<div class="modal-center-icon">⚠️</div>' +
+    '<div class="modal-center-title">确定恢复默认设置吗？</div>' +
+    '<div class="modal-center-text">所有孩子的积分、任务、奖励、记录和徽章<br>都会被清空，恢复到初始状态！</div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-danger" onclick="resetAll2()">我要清空</button></div>', true);
+}
+function resetAll2() {
+  openModal(
+    '<div class="modal-center-icon">🗑️</div>' +
+    '<div class="modal-center-title">最后确认一次</div>' +
+    '<div class="modal-center-text">此操作<b style="color:#E05B4B">不可恢复</b>，建议先导出备份！<br>真的要清空全部数据吗？</div>' +
+    '<div class="form-btns"><button class="btn btn-ghost" onclick="closeModal()">手滑了</button>' +
+    '<button class="btn btn-danger" onclick="doReset()">确认清空</button></div>', true);
+}
+function doReset() {
+  DATA = defaultData();
+  save(); closeModal(); renderAll();
+  toast('已恢复默认设置');
+}
+
+/* ============ 弹窗与提示 ============ */
+function openModal(html, center) {
+  var mask = document.getElementById('modalMask');
+  document.getElementById('modalPanel').innerHTML = html;
+  mask.classList.toggle('center', !!center);
+  mask.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modalMask').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function onMaskClick(ev) {
+  if (ev.target === document.getElementById('modalMask')) closeModal();
+}
+var toastTimer = null;
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+function floatScore(text, x, y) {
+  var el = document.createElement('div');
+  el.className = 'float-score';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 1200);
+}
+function showBadgeModal(badges) {
+  var html = badges.map(function(b){
+    return '<div class="badge-modal-item"><div class="bm-icon">' + b.icon + '</div>' +
+      '<div class="bm-name">' + esc(b.name) + '</div>' +
+      '<div class="bm-desc">' + esc(b.desc) + '</div></div>';
+  }).join('');
+  openModal(
+    '<div class="modal-center-icon">🎉</div>' +
+    '<div class="modal-center-title">恭喜解锁新徽章！</div>' +
+    '<div class="badge-modal-list">' + html + '</div>' +
+    '<div class="modal-center-text">继续加油，收获更多成长吧～</div>' +
+    '<div class="form-btns"><button class="btn btn-primary btn-block" onclick="closeModal()">太棒了！</button></div>', true);
+}
+
+/* ============ 跨天自动刷新 ============ */
+setInterval(function(){
+  if (todayStr() !== renderedDate) {
+    renderedDate = todayStr();
+    renderAll();
+    toast('🌞 新的一天开始了，今天的任务已刷新');
+  }
+}, 30000);
+
+/* ============ 初始化 ============ */
+renderAll();
+</script>
+</body>
+</html>
